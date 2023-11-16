@@ -70,20 +70,22 @@ public class MainOk {
             primarySearchVariables("const", lines);
 
             //Замена имен переменных при их использовании
+            transform = replaceNameVariable(lines, line);
+//            for (String variable : variables) {
+//                for (int i = 0; i < lines.length; i++) {
+//                    line = lines[i];
+//                    int posVal = line.indexOf(variable);
+//                    if (posVal > 0 && !line.contains("\" " + variable + " \"")) {
+//                        lines[i] = line.replaceAll("(?<=\\W)" + variable + "(?=\\W)", mapNameVariables.get(variable));
+//                    } else if (line.chars().filter(ch -> ch == variable.charAt(0)).count() > 1 && line.contains("\" " + variable + " \"")) {
+//                        lines[i] = line.replaceFirst(Pattern.quote(variable), mapNameVariables.get(variable));
+//                    } else if (posVal == 0) {
+//                        lines[i] = line.replaceFirst(variable + "\\W", mapNameVariables.get(variable));
+//                    }
+//                }
+//            }
 
-            for (String variable : variables) {
-                for (int i = 0; i < lines.length; i++) {
-                    line = lines[i];
-                    int posVal = line.indexOf(variable);
-                    if (posVal > 0 && !line.contains("\" " + variable + " \"")) {
-                        lines[i] = line.replaceAll("(?<=\\W)" + variable + "(?=\\W)", mapNameVariables.get(variable));
-                    } else if (line.chars().filter(ch -> ch == variable.charAt(0)).count() > 1 && line.contains("\" " + variable + " \"")) {
-                        lines[i] = line.replaceFirst(Pattern.quote(variable), mapNameVariables.get(variable));
-                    } else if (posVal == 0) {
-                        lines[i] = line.replaceFirst(variable + "\\W", mapNameVariables.get(variable));
-                    }
-                }
-            }
+
 
 
 
@@ -131,6 +133,23 @@ public class MainOk {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static String replaceNameVariable(String[] lines, String line) {
+        for (String variable : variables) {
+            for (int i = 0; i < lines.length; i++) {
+                line = lines[i];
+                int posVal = line.indexOf(variable);
+                if (posVal > 0 && !line.contains("\" " + variable + " \"")) {
+                    lines[i] = line.replaceAll("(?<=\\W)" + variable + "(?=\\W)", mapNameVariables.get(variable));
+                } else if (line.chars().filter(ch -> ch == variable.charAt(0)).count() > 1 && line.contains("\" " + variable + " \"")) {
+                    lines[i] = line.replaceFirst(Pattern.quote(variable), mapNameVariables.get(variable));
+                } else if (posVal == 0) {
+                    lines[i] = line.replaceFirst(variable + "\\W", mapNameVariables.get(variable));
+                }
+            }
+        }
+        return line;
     }
 
     private static String getName(String keyword, String line) {

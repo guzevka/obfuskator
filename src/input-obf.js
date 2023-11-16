@@ -1,20 +1,20 @@
-let _x6348u = 5;
-let _x5110v = _x6348u + 10;
-if (_x5110v > 10) {
+let _x5476m = 5;
+let _x1370l = _x5476m + 10;
+if (_x1370l > 10) {
     console.log("Результат больше 10");
 } else {
     console.log("Результат меньше или равен 10");
 }
-for (let _x4799i = 0; _x4799i < 5; _x4799i++) {
+for (let _x3090f = 0; _x3090f < 5; _x3090f++) {
     console.log("word");
 }
 
-function _x3819c(line) {
-    for (let _x4034v = 0; _x4034v < 5; _x4034v++) {
-        if (5 > 0 && true && true + 5 && 2 ** 5 > 10 ** 1 && 5 + 4 - 15 - 518 + 92 + 8421 * 2 / 12 * 0 < 4892 && _x4034v % 2 != 0) {
+function _x3192h(line) {
+    for (let _x3286u = 0; _x3286u < 5; _x3286u++) {
+        if (5 > 0 && 5 > 0 && !false && !false && 2 ** 5 > 10 ** 1 && _x3286u % 2 != 0) {
             console.log("-----------")
         }
         console.log(line)
     }
     return line
-};_x3819c("it is okay")
+};_x3192h("it is okay")
