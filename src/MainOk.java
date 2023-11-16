@@ -12,29 +12,12 @@ public class MainOk {
     private static final Set<String> setFunctions = new HashSet<>();
     private static final Set<String> setNewNames = new HashSet<>();
     private static final Map<String, String> mapNameVariables = new HashMap<>();
-    //для добавления избыточности кода
-    private static final List<String> redundantCodeList = Arrays.asList(
-            "true", "!false", "5>0", "2**5 > 10**1", "true + 5",
-            "5+4-15-518+92+8421*2/12*0 < 4892"
+    private static final List<String> predicatList = Arrays.asList(
+            "true", "!false", "5>0", "2**5 > 10**1"
     );
-    //для добавления избыточности кода
-    private static final List<String> listUnreachableCode = Arrays.asList(
-            "if(true>false){\n" +
-                    "    while(false){\n" +
-                    "        System.out.println(0);\n" +
-                    "    }\n" +
-                    "}",
-            "() -> {\n" +
-                    "    alert(eval(\"5+5\"));\n" +
-                    "};",
-            "(() -> {\n" +
-                    "    alert('const ijkl = \"dspc,d\" + 5 - true;');\n" +
-                    "})();",
-            "if (false) {\n" +
-                    "    \"IiIiiIII\".concat(\"iiIIii\");\n" +
-                    "}",
+    private static final List<String> unachievableList = Arrays.asList(
             "if (5>0) {\n" +
-                    "    new Date(\"December 25, 1995 23:15:00\").getDate();\n" +
+                    "    new Date(\"October 17, 2003 23:15:00\").getDate();\n" +
                     "}",
             "if (5+4-15-518+92+8421*2/12*0 < 4892) {\n" +
                     "    Math.sin(Math.PI/2) + 1 - 20;\n" +
@@ -42,7 +25,7 @@ public class MainOk {
     );
 
     public static void main(String[] args) {
-        String inputFile = "C:\\Users\\walla\\Programms\\Java\\obfuskator\\src\\input.js";
+        String inputFile = "C:\\Users\\walla\\Programms\\Java\\obfuskator\\src\\input-obf.js";
         String outputFile = "C:\\Users\\walla\\Programms\\Java\\obfuskator\\src\\output.js";
 
         try {
@@ -72,23 +55,15 @@ public class MainOk {
                 }
             }
 
+            // 3 Добавление пробелов
+            // 4 Создание lines
+            // 5 Записывание переменных в метод primarySearchVariables
+            // 6 Замена имен переменных
+            // 7 Добавление непрозрачных предикатов и недостижимого кода
+            // 8 Удаление переноса строк
+            // 9 Замена имен функций
 
-            transform = transform.replace(";", " ; ");
-            transform = transform.replace("=", " = ");
-            transform = transform.replace("(", " ( ");
-            transform = transform.replace(")", " ) ");
-            transform = transform.replace("{", " { ");
-            transform = transform.replace("}", " } ");
-            transform = transform.replace("[", " [ ");
-            transform = transform.replace("]", " ] ");
-            transform = transform.replace("+", " + ");
-            transform = transform.replace("-", " - ");
-            transform = transform.replace(".", " . ");
-            transform = transform.replace(",", " , ");
-            transform = transform.replace("`", " ` ");
-            transform = transform.replace("\"", " \" ");
             String[] lines = transform.split("\n");
-
 
             primarySearchVariables("let", lines);
             primarySearchVariables("var", lines);
@@ -116,14 +91,14 @@ public class MainOk {
                 //Добавление избыточного кода:
                 if (lines[i].contains("if(")) {
                     for(int j = 0; j < 5; j++) {
-                        int rndNumber = new Random().nextInt(redundantCodeList.size());
-                        String rndValue = redundantCodeList.get(rndNumber);
+                        int rndNumber = new Random().nextInt(predicatList.size());
+                        String rndValue = predicatList.get(rndNumber);
                         lines[i] = lines[i].replace("if(", "if( " + rndValue + " && ");
                     }
                     //добавление недостижимого кода
                     if (lines[i].contains("return")) {
-                        int rndIndex = new Random().nextInt(listUnreachableCode.size());
-                        lines[i + 1] = "\n; " + listUnreachableCode.get(rndIndex) + lines[i + 1];
+                        int rndIndex = new Random().nextInt(unachievableList.size());
+                        lines[i + 1] = "\n; " + unachievableList.get(rndIndex) + lines[i + 1];
                     }
                 }
             }
