@@ -8,9 +8,9 @@ import java.util.regex.Pattern;
 
 public class MainOk {
     private static String transform = "";
-    private static final Set<String> setVariables = new HashSet<>();
-    private static final Set<String> setFunctions = new HashSet<>();
-    private static final Set<String> setNewNames = new HashSet<>();
+    private static final Set<String> variables = new HashSet<>();
+    private static final Set<String> functions = new HashSet<>();
+    private static final Set<String> newNames = new HashSet<>();
     private static final Map<String, String> mapNameVariables = new HashMap<>();
     private static final List<String> predicatList = Arrays.asList(
             "true", "!false", "5>0", "2**5 > 10**1"
@@ -25,7 +25,7 @@ public class MainOk {
     );
 
     public static void main(String[] args) {
-        String inputFile = "C:\\Users\\walla\\Programms\\Java\\obfuskator\\src\\input-obf.js";
+        String inputFile = "C:\\Users\\walla\\Programms\\Java\\obfuskator\\src\\input.js";
         String outputFile = "C:\\Users\\walla\\Programms\\Java\\obfuskator\\src\\output.js";
 
         try {
@@ -40,18 +40,18 @@ public class MainOk {
                     String functionName = getName("function", line);
                     //проверка, что функция не анонимная
                     if (!functionName.isEmpty() && !functionName.contains("(")) {
-                        setFunctions.add(functionName);
+                        functions.add(functionName);
                     }
                 }
                 //Поиск имен переменных:
-                if (line.contains("let ")) {
-                    setVariables.add(getName("let", line));
+                if (line.contains("let")) {
+                    variables.add(getName("let", line));
                 }
                 if (line.contains("var")) {
-                    setVariables.add(getName("var", line));
+                    variables.add(getName("var", line));
                 }
                 if (line.contains("const")) {
-                    setVariables.add(getName("const", line));
+                    variables.add(getName("const", line));
                 }
             }
 
@@ -71,7 +71,7 @@ public class MainOk {
 
             //Замена имен переменных при их использовании
 
-            for (String variable : setVariables) {
+            for (String variable : variables) {
                 for (int i = 0; i < lines.length; i++) {
                     line = lines[i];
                     int posVal = line.indexOf(variable);
@@ -117,10 +117,10 @@ public class MainOk {
 
 
             //Производим замену старых имен функций на новые
-            for (String functionName : setFunctions) {
+            for (String functionName : functions) {
                 String newName = newNewNameGenerator();
-                if (!setNewNames.contains(newName)) {
-                    setNewNames.add(newName);
+                if (!newNames.contains(newName)) {
+                    newNames.add(newName);
                     transform = transform.replace(functionName + "(", newName + "(");
                 }
             }
@@ -154,7 +154,7 @@ public class MainOk {
 
     private static void primarySearchVariables(String keyword, String[] lines) {
         //Проход по именам старых переменных
-        for (String variables : setVariables) {
+        for (String variables : variables) {
             String newName = newNewNameGenerator(); //берём результат функции выше newNewNameGenerator()
             //Проходим по строкам
             for (int i = 0; i < lines.length; i++) {
