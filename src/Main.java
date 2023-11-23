@@ -1,21 +1,23 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 
 public class Main {
-
-    private static final List<String> unvisiblePredicatList = Arrays.asList(
+    private static String transform = "";
+    private static final Set<String> variables = new HashSet<>(); // старые названия переменных
+    private static final Set<String> functions = new HashSet<>(); // старые названия функций
+    private static final Set<String> newFunctions = new HashSet<>(); // новые названия функций
+    private static final Map<String, String> newVariables = new HashMap<>(); // новые названия переменных
+    private static final List<String> predicatList = Arrays.asList(
             "true", "!false", "5>0", "2**5 > 10**1"
     );
-
-    private static final Set<String> setVariables = new HashSet<>();
-    private static final Map<String, String> mapNameVariables = new HashMap<>();
-
     private static final List<String> unachievableList = Arrays.asList(
-            "if(true>false){\n" +
-                    "    while(false){\n" +
-                    "        System.out.println(0);\n" +
-                    "    }\n" +
+            "if (5>0) {\n" +
+                    "    new Date(\"October 17, 2003 23:15:00\").getDate();\n" +
                     "}",
             "if (5+4-15-518+92+8421*2/12*0 < 4892) {\n" +
                     "    Math.sin(Math.PI/2) + 1 - 20;\n" +
@@ -23,141 +25,119 @@ public class Main {
     );
 
     public static void main(String[] args) {
-        String inputFilePath = "C:\\Users\\walla\\Programms\\input.txt";
-        String outputFilePath = "C:\\Users\\walla\\Programms\\output.txt";
+        String inputFile = "C:\\Users\\walla\\Programms\\Java\\obfuskator\\src\\input.js";
+        String outputFile = "C:\\Users\\walla\\Programms\\Java\\obfuskator\\src\\output.js";
 
         try {
-            File inputFile = new File(inputFilePath);
-            FileReader fileReader = new FileReader(inputFile);
-            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 
-            File outputFile = new File(outputFilePath);
-            FileWriter fileWriter = new FileWriter(outputFile);
-            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                transform += line + "\n";
 
-            String line = "";
-            //String[] lines = line.split("\n");
-            while ((line = bufferedReader.readLine()) != null) {
+                if (line.contains("function")) {
+                    String functionName = getName("function", line);
 
-                //String transformedLine = line + "\n";
-                 String transformedLine = deleteTransfer(line);
-                //transformedLine = deleteTransfer(transformedLine);
-                transformedLine = unvisiblePredicat(transformedLine);
-                transformedLine = setNewName(transformedLine);
-                //transformedLine = setNewName(transformedLine);
-                //transformedLine = unachievable(transformedLine);
+                    if (!functionName.isEmpty() && !functionName.contains("(")) {
+                        functions.add(functionName);
+                    }
+                }
 
-                bufferedWriter.write(transformedLine);
-                bufferedWriter.newLine();
-
+                if (line.contains("let")) {
+                    variables.add(getName("let", line));
+                }
+                if (line.contains("var")) {
+                    variables.add(getName("var", line));
+                }
+                if (line.contains("const")) {
+                    variables.add(getName("const", line));
+                }
             }
 
-            bufferedReader.close();
-            bufferedWriter.close();
+            String[] lines = transform.split("\n");
 
-            System.out.println("Данные успешно прочитаны, преобразованы и записаны в другой файл.");
+            primarySearchVariables("let", lines);
+            primarySearchVariables("var", lines);
+            primarySearchVariables("const", lines);
+
+            transform = replaceNameVariable(lines); // меняю имена переменных
+            transform = addPredicat(lines,2); // добавляю предикаты
+            transform = addUnavailable(lines); // добавляю недостижимый код
+            transform = String.join("\n", lines);
+            transform = deleteTransform(transform); // удаляю пробелы и переносы
+            transform = replaceNameFunction(transform); // меняю имена функций
+
+            writer.write(transform);
+            writer.close();
+            reader.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    // Метод обфускации, удаляющий пробелы, перенос каретки и комментарии
-    public static String deleteTransfer(String line) {
-        line = line.replaceAll("\\s(?!(\\n))", " ");
-        line = line.replaceAll("(?<=[A-z])\\s+(?=[A-z])", " ");
-        line = line.replaceAll("\\B\\s+|\\s+\\B", "");
-        line = line.replaceAll("/\\*[\\s\\S]*?\\*/", "");
-        return line;
-    }
-
-    // Метод обфускации с непрозрачными предикатами
-    public static String unvisiblePredicat(String line) {
-        String[] lines = line.split("\n");
-        for(int i=0; i<lines.length; i++) {
-            if(lines[i].contains("if(")) {
-                for(int j=0; j<4; j++) {
-                    int random = new Random().nextInt(unvisiblePredicatList.size());
-                    String value = unvisiblePredicatList.get(random);
-                    lines[i] = lines[i].replace("if(", "if(" + value + "&&");
-                }
-
+    private static String addUnavailable(String[] lines) {
+        String line = "";
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i].contains("return")) {
+                int rndIndex = new Random().nextInt(unachievableList.size());
+                lines[i + 1] = "\n; " + unachievableList.get(rndIndex) + lines[i + 1];
             }
         }
         line = String.join("\n", lines);
         return line;
     }
 
-    // Метод обфускации, меняющий название переменной
-    public static String setNewName(String line) {
-
-        String[] lines = line.split("\\s+");
-
-        if (line.contains("let ")) {
-            setVariables.add(getName("let", line));
-        }
-        if (line.contains("var")) {
-            setVariables.add(getName("var", line));
-        }
-        if (line.contains("const")) {
-            setVariables.add(getName("const", line));
-        }
-
-        primarySearchVariables("let", lines);
-        primarySearchVariables("var", lines);
-        primarySearchVariables("const", lines);
-
-//        for (String variable : setVariables) {
-//
-//            for (int i = 0; i < lines.length; i++) {
-//                line = lines[i];
-//                int posVal = line.indexOf(variable);
-//                if (posVal > 0 && !line.contains("\" " + variable + " \"")) {
-//                    lines[i] = line.replaceAll("(?<=\\W)" + variable + "(?=\\W)", mapNameVariables.get(variable));
-//                } else if (line.chars().filter(ch -> ch == variable.charAt(0)).count() > 1 && line.contains("\" " + variable + " \"")) {
-//                    lines[i] = line.replaceFirst(Pattern.quote(variable), mapNameVariables.get(variable));
-//                } else if (posVal == 0) {
-//                    lines[i] = line.replaceFirst("(?<!\\w)" + Pattern.quote(variable) + "(?!\\w)", mapNameVariables.get(variable));
-//                }
-//            }
-//        }
-
-        /////
-//        String[] words = line.split("\\s+"); // Split the line into words
-//
-//        for (int i = 0; i < words.length; i++) {
-//            String word = words[i];
-//            if (word.matches("[a-zA-Z_$][a-zA-Z_$0-9]*")) { // Check if the word is a valid variable name
-//                String newName = nameGenerator(); // Generate a new variable name
-//                words[i] = word.replaceFirst("\\b" + word + "\\b", newName); // Replace the old variable name with the new one
-//            }
-//        }
-
-        return String.join(" ", lines); // Join the modified words back into a line
+    private static String deleteTransform(String line) {
+        // переносы строк
+        line = line.replaceAll("\\s(?!(\\n))", " ");
+        // пробелы (кроме промежутков между слов)
+        line = line.replaceAll("(?<=[A-z])\\s+(?=[A-z])", " ");
+        return line;
     }
 
-    private static void primarySearchVariables(String keyword, String[] lines) {
-        //Проход по именам старых переменных
-        for (String variables : setVariables) {
-            String newName = nameGenerator(); //берём результат функции выше newNewNameGenerator()
-            //Проходим по строкам
+    private static String replaceNameFunction(String line) {
+        for (String functionName : functions) {
+            String newName = nameGenerator();
+            if (!newFunctions.contains(newName)) {
+                newFunctions.add(newName);
+                line = line.replace(functionName + "(", newName + "(");
+            }
+        }
+        return line;
+    }
+
+    public static String replaceNameVariable(String[] lines) {
+        String line = "";
+        for (String variable : variables) {
             for (int i = 0; i < lines.length; i++) {
-                String line = lines[i];
-                int indexLet = line.indexOf(keyword);
-                //Если в строке есть ключевое слово, то ищем имя переменной
-                if (indexLet != -1) {
-                    int posVar = line.indexOf(variables);
-                    if (posVar != -1 && line.charAt(posVar - 1) == ' ' && line.charAt(posVar + variables.length()) == ' ') {
-                        mapNameVariables.put(variables, newName);
-                        lines[i] = line.replace(variables, newName);
-                    }
+                line = lines[i];
+                int posVal = line.indexOf(variable);
+                if (posVal > 0 && !line.contains("\" " + variable + " \"")) {
+                    lines[i] = line.replaceAll("(?<=\\W)" + variable + "(?=\\W)", newVariables.get(variable));
+                } else if (line.chars().filter(ch -> ch == variable.charAt(0)).count() > 1 && line.contains("\" " + variable + " \"")) {
+                    lines[i] = line.replaceFirst(Pattern.quote(variable), newVariables.get(variable));
+                } else if (posVal == 0) {
+                    lines[i] = line.replaceFirst(variable + "\\W", newVariables.get(variable));
                 }
             }
         }
+        line = String.join("\n", lines);
+        return line;
     }
-    public static String nameGenerator() {
-        Random random = new Random();
-        String name = "_x" + (random.nextInt(9000) + 1000) + (char) (random.nextInt(26) + 'a');
-        return name;
+
+    public static String addPredicat(String[] lines, int count) {
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i].contains("if(")) {
+                for(int j = 0; j < count; j++) {
+                    int rndNumber = new Random().nextInt(predicatList.size());
+                    String rndValue = predicatList.get(rndNumber);
+                    lines[i] = lines[i].replace("if(", "if( " + rndValue + " && ");
+                }
+            }
+        }
+        String line = String.join("\n", lines);
+        return line;
     }
 
     private static String getName(String keyword, String line) {
@@ -169,94 +149,29 @@ public class Main {
         return "";
     }
 
-    // Метод обфускации, добавляющий недостижимый код
-//    public static String unachievable(String line) {
-//        String[] lines = line.split("\n");
-//        for (int i = 0; i < lines.length; i++) {
-//            if (lines[i].contains("return")) {
-//                for (int j = 0; j < lines.length - i - 1; j++) {
-//                    int random = new Random().nextInt(unachievableList.size());
-//                    if (i + 1 < lines.length) {
-//                        lines[i + 1] = unachievableList.get(random) + lines[i + 1];
-//                    }
-//                }
-//            }
-//        }
-//        line = String.join("\n", lines);
-//        return line;
-//    }
 
-    // Мертвый код
-    public static String deadCode(String line, boolean isDeadCodeAdded) {
-        if (isDeadCodeAdded) {
-            return line;
-        } else {
-            System.out.println("Добавление мертвого кода");
-            line += "\nlet c = 5; \nlet d = 10; \nif(c>d) {\n console.log('Этот код не выполнится');\n}else{\nconsole.log('Этот код выполнится');\n}";
-        }
-         return line;
+    private static String nameGenerator() {
+        Random random = new Random();
+        return "_x" + (random.nextInt(9000) + 1000) + (char) (random.nextInt(26) + 'a');
     }
 
-    public static String noOtstup(String line) {
-        line = line.replaceAll("\n", "");
-        line = line.trim().replaceAll(" +", " ");
-        return line;
-    }
+    private static void primarySearchVariables(String keyword, String[] lines) {
 
-    // Непрозрачные предикаты (ПО-ДРУГОМУ)
-    private static String predicat(String line) {
-        String obfuscatedCode = "";
-        for (char c : line.toCharArray()) {
-            if (c == '>') {
-                obfuscatedCode += "isGreaterThan";
-            } else if (c == '<') {
-                obfuscatedCode += "isLessThan";
-            } else {
-                obfuscatedCode += c;
+        for (String variables : variables) {
+            String newName = nameGenerator();
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i];
+                int indexLet = line.indexOf(keyword);
+                if (indexLet != -1) {
+                    int posVar = line.indexOf(variables);
+                    if (posVar != -1 && line.charAt(posVar - 1) == ' ' && line.charAt(posVar + variables.length()) == ' ') {
+                        newVariables.put(variables, newName);
+                        lines[i] = line.replace(variables, newName);
+                    }
+                }
             }
         }
-        return obfuscatedCode;
-    }
-
-    // Методы обфускации
-    private static String obfuskate(String line) {
-        // Добавление лишних комментариев
-        //line = "// This is a random comment\n" + line;
-        // Добавление лишних пробелов
-        line = line.replaceAll("\\s+", " ");
-        // Избыточный код
-        line = line.replace("e.printStackTrace();", " ");
-        // Удаление отступов
-        line = line.trim();
-        return line;
-    }
-
-    public static String renameVariables(String line) {
-        // Пример простого переименования переменных
-        line = line.replace("inputFilePath", "randomVariable1");
-        line = line.replace("outputFilePath", "randomVariable2");
-
-        return line;
-    }
-
-    public static String addUnreachableCode(String line) {
-        // Пример внесения недостижимого кода
-        line += "\nSystem.exit(0);";
-
-        return line;
-    }
-
-    public static String addRedundantCode(String line) {
-        // Пример внесения избыточного кода
-        line += "\nint x = 5 + 10;";
-
-        return line;
     }
 
 
-    private static String transformData(String data) {
-        // Выполнение преобразований над данными
-        // Например, можно заменить определенные символы или выполнить другие манипуляции с текстом
-        return data.toUpperCase();
-    }
 }
