@@ -61,8 +61,8 @@ public class MainOk {
             primarySearchVariables("var", lines);
             primarySearchVariables("const", lines);
 
-            transform = replaceNameVariable(lines, line); // меняю имена переменных
-            transform = addPredicat(transform); // добавляю предикаты
+            transform = replaceNameVariable(lines); // меняю имена переменных
+            transform = addPredicat(lines); // добавляю предикаты
 
 //            for (int i = 0; i < lines.length; i++) {
 //                //Добавление избыточного кода:
@@ -82,8 +82,7 @@ public class MainOk {
 
             transform = String.join("\n", lines);
 
-
-            transform = deleteTransform(transform);
+            transform = deleteTransform(transform); // удаляю пробелы и переносы
 
             transform = replaceNameFunction(transform); // меняю имена функций
 
@@ -116,7 +115,8 @@ public class MainOk {
         return line;
     }
 
-    public static String replaceNameVariable(String[] lines, String line) {
+    public static String replaceNameVariable(String[] lines) {
+        String line = "";
         for (String variable : variables) {
             for (int i = 0; i < lines.length; i++) {
                 line = lines[i];
@@ -130,11 +130,11 @@ public class MainOk {
                 }
             }
         }
+        line = String.join("\n", lines);
         return line;
     }
 
-    public static String addPredicat(String line) {
-        String[] lines = line.split("\n");
+    public static String addPredicat(String[] lines) {
         for (int i = 0; i < lines.length; i++) {
             if (lines[i].contains("if(")) {
                 for(int j = 0; j < 5; j++) {
@@ -144,7 +144,7 @@ public class MainOk {
                 }
             }
         }
-        line = String.join("\n", lines);
+        String line = String.join("\n", lines);
         return line;
     }
 
