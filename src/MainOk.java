@@ -55,77 +55,37 @@ public class MainOk {
                 }
             }
 
-            // 3 Добавление пробелов
-            // 4 Создание lines
-            // 5 Записывание переменных в метод primarySearchVariables
-            // 6 Замена имен переменных
-            // 7 Добавление непрозрачных предикатов и недостижимого кода
-            // 8 Удаление переноса строк
-            // 9 Замена имен функций
-
             String[] lines = transform.split("\n");
 
             primarySearchVariables("let", lines);
             primarySearchVariables("var", lines);
             primarySearchVariables("const", lines);
 
-            //Замена имен переменных при их использовании
-            transform = replaceNameVariable(lines, line);
-//            for (String variable : variables) {
-//                for (int i = 0; i < lines.length; i++) {
-//                    line = lines[i];
-//                    int posVal = line.indexOf(variable);
-//                    if (posVal > 0 && !line.contains("\" " + variable + " \"")) {
-//                        lines[i] = line.replaceAll("(?<=\\W)" + variable + "(?=\\W)", mapNameVariables.get(variable));
-//                    } else if (line.chars().filter(ch -> ch == variable.charAt(0)).count() > 1 && line.contains("\" " + variable + " \"")) {
-//                        lines[i] = line.replaceFirst(Pattern.quote(variable), mapNameVariables.get(variable));
-//                    } else if (posVal == 0) {
-//                        lines[i] = line.replaceFirst(variable + "\\W", mapNameVariables.get(variable));
+            transform = replaceNameVariable(lines, line); // меняю имена переменных
+            transform = addPredicat(transform); // добавляю предикаты
+
+//            for (int i = 0; i < lines.length; i++) {
+//                //Добавление избыточного кода:
+//                if (lines[i].contains("if(")) {
+//                    for(int j = 0; j < 5; j++) {
+//                        int rndNumber = new Random().nextInt(predicatList.size());
+//                        String rndValue = predicatList.get(rndNumber);
+//                        lines[i] = lines[i].replace("if(", "if( " + rndValue + " && ");
+//                    }
+//                    //добавление недостижимого кода
+//                    if (lines[i].contains("return")) {
+//                        int rndIndex = new Random().nextInt(unachievableList.size());
+//                        lines[i + 1] = "\n; " + unachievableList.get(rndIndex) + lines[i + 1];
 //                    }
 //                }
 //            }
 
-
-
-
-
-            for (int i = 0; i < lines.length; i++) {
-                //Добавление избыточного кода:
-                if (lines[i].contains("if(")) {
-                    for(int j = 0; j < 5; j++) {
-                        int rndNumber = new Random().nextInt(predicatList.size());
-                        String rndValue = predicatList.get(rndNumber);
-                        lines[i] = lines[i].replace("if(", "if( " + rndValue + " && ");
-                    }
-                    //добавление недостижимого кода
-                    if (lines[i].contains("return")) {
-                        int rndIndex = new Random().nextInt(unachievableList.size());
-                        lines[i + 1] = "\n; " + unachievableList.get(rndIndex) + lines[i + 1];
-                    }
-                }
-            }
-
             transform = String.join("\n", lines);
 
 
-            //Удаление переносов строк:
-            transform = transform.replaceAll("\\s(?!(\\n))", " ");
-            //Удаление пробелов везде, кроме между слов:
-            transform = transform.replaceAll("(?<=[A-z])\\s+(?=[A-z])", " ");
-            //Удаление пробелов:
-            transform = transform.replaceAll("\\B\\s+|\\s+\\B", "");
-            //Документация и многострочный комментарий:
-            transform = transform.replaceAll("/\\*[\\s\\S]*?\\*/", "");
+            transform = deleteTransform(transform);
 
-
-            //Производим замену старых имен функций на новые
-            for (String functionName : functions) {
-                String newName = newNewNameGenerator();
-                if (!newNames.contains(newName)) {
-                    newNames.add(newName);
-                    transform = transform.replace(functionName + "(", newName + "(");
-                }
-            }
+            transform = replaceNameFunction(transform); // меняю имена функций
 
             writer.write(transform);
             writer.close();
@@ -133,6 +93,27 @@ public class MainOk {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static String deleteTransform(String line) {
+        //Удаление переносов строк:
+        line = line.replaceAll("\\s(?!(\\n))", " ");
+        //Удаление пробелов везде, кроме между слов:
+        line = line.replaceAll("(?<=[A-z])\\s+(?=[A-z])", " ");
+        //Удаление пробелов:
+        line = line.replaceAll("\\B\\s+|\\s+\\B", "");
+        return line;
+    }
+
+    private static String replaceNameFunction(String line) {
+        for (String functionName : functions) {
+            String newName = newNewNameGenerator();
+            if (!newNames.contains(newName)) {
+                newNames.add(newName);
+                line = line.replace(functionName + "(", newName + "(");
+            }
+        }
+        return line;
     }
 
     public static String replaceNameVariable(String[] lines, String line) {
@@ -149,6 +130,21 @@ public class MainOk {
                 }
             }
         }
+        return line;
+    }
+
+    public static String addPredicat(String line) {
+        String[] lines = line.split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i].contains("if(")) {
+                for(int j = 0; j < 5; j++) {
+                    int rndNumber = new Random().nextInt(predicatList.size());
+                    String rndValue = predicatList.get(rndNumber);
+                    lines[i] = lines[i].replace("if(", "if( " + rndValue + " && ");
+                }
+            }
+        }
+        line = String.join("\n", lines);
         return line;
     }
 
