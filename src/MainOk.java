@@ -64,21 +64,7 @@ public class MainOk {
             transform = replaceNameVariable(lines); // меняю имена переменных
             transform = addPredicat(lines); // добавляю предикаты
 
-//            for (int i = 0; i < lines.length; i++) {
-//                //Добавление избыточного кода:
-//                if (lines[i].contains("if(")) {
-//                    for(int j = 0; j < 5; j++) {
-//                        int rndNumber = new Random().nextInt(predicatList.size());
-//                        String rndValue = predicatList.get(rndNumber);
-//                        lines[i] = lines[i].replace("if(", "if( " + rndValue + " && ");
-//                    }
-//                    //добавление недостижимого кода
-//                    if (lines[i].contains("return")) {
-//                        int rndIndex = new Random().nextInt(unachievableList.size());
-//                        lines[i + 1] = "\n; " + unachievableList.get(rndIndex) + lines[i + 1];
-//                    }
-//                }
-//            }
+            transform = addUnavailable(lines);
 
             transform = String.join("\n", lines);
 
@@ -92,6 +78,18 @@ public class MainOk {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static String addUnavailable(String[] lines) {
+        String line = "";
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i].contains("return")) {
+                int rndIndex = new Random().nextInt(unachievableList.size());
+                lines[i + 1] = "\n; " + unachievableList.get(rndIndex) + lines[i + 1];
+            }
+        }
+        line = String.join("\n", lines);
+        return line;
     }
 
     private static String deleteTransform(String line) {
